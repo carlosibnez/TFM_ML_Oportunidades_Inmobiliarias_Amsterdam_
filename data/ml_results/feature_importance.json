@@ -1,0 +1,123 @@
+{
+  "model_name": "LightGBM",
+  "metric_kind": "feature_importances_",
+  "n_features": 23,
+  "features": [
+    {
+      "feature": "distance_to_center_km",
+      "importance": 1459.0,
+      "importance_normalized": 0.17176830704026372
+    },
+    {
+      "feature": "year_built",
+      "importance": 1348.0,
+      "importance_normalized": 0.15870025900635742
+    },
+    {
+      "feature": "living_area",
+      "importance": 1037.0,
+      "importance_normalized": 0.1220861784789263
+    },
+    {
+      "feature": "area_per_room",
+      "importance": 928.0,
+      "importance_normalized": 0.10925359076995526
+    },
+    {
+      "feature": "area_per_bedroom",
+      "importance": 784.0,
+      "importance_normalized": 0.09230044737461737
+    },
+    {
+      "feature": "energy_label_encoded",
+      "importance": 526.0,
+      "importance_normalized": 0.06192606545797033
+    },
+    {
+      "feature": "neighborhood_avg_price",
+      "importance": 456.0,
+      "importance_normalized": 0.05368495408523664
+    },
+    {
+      "feature": "floor",
+      "importance": 398.0,
+      "importance_normalized": 0.046856604662114436
+    },
+    {
+      "feature": "neighborhood_avg_area",
+      "importance": 327.0,
+      "importance_normalized": 0.038497763126913116
+    },
+    {
+      "feature": "neighborhood_property_count",
+      "importance": 294.0,
+      "importance_normalized": 0.03461266776548152
+    },
+    {
+      "feature": "bathroom_ratio",
+      "importance": 205.0,
+      "importance_normalized": 0.02413468330586296
+    },
+    {
+      "feature": "rooms",
+      "importance": 128.0,
+      "importance_normalized": 0.015069460795855898
+    },
+    {
+      "feature": "property_type_house",
+      "importance": 125.0,
+      "importance_normalized": 0.014716270308453025
+    },
+    {
+      "feature": "has_garden",
+      "importance": 118.0,
+      "importance_normalized": 0.013892159171179657
+    },
+    {
+      "feature": "bedroom_ratio",
+      "importance": 109.0,
+      "importance_normalized": 0.012832587708971038
+    },
+    {
+      "feature": "has_balcony",
+      "importance": 75.0,
+      "importance_normalized": 0.008829762185071815
+    },
+    {
+      "feature": "bedrooms",
+      "importance": 63.0,
+      "importance_normalized": 0.007417000235460325
+    },
+    {
+      "feature": "has_parking",
+      "importance": 58.0,
+      "importance_normalized": 0.006828349423122204
+    },
+    {
+      "feature": "bathrooms",
+      "importance": 30.0,
+      "importance_normalized": 0.0035319048740287263
+    },
+    {
+      "feature": "is_furnished",
+      "importance": 15.0,
+      "importance_normalized": 0.0017659524370143632
+    },
+    {
+      "feature": "is_central",
+      "importance": 11.0,
+      "importance_normalized": 0.0012950317871438662
+    },
+    {
+      "feature": "property_type_studio",
+      "importance": 0.0,
+      "importance_normalized": 0.0
+    },
+    {
+      "feature": "property_type_room",
+      "importance": 0.0,
+      "importance_normalized": 0.0
+    }
+  ],
+  "generated_at": "2026-05-12T13:58:49.860852"
+}

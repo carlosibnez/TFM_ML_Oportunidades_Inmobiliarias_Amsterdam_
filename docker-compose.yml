@@ -1,0 +1,112 @@
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: tfm_database
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tfm_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: tfm_backend
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+      - ./ml_pipeline:/ml_pipeline
+      - ./data:/data
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=database
+      - POSTGRES_PORT=5432
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_DEBUG=${DJANGO_DEBUG}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - OPPORTUNITY_THRESHOLD=${OPPORTUNITY_THRESHOLD}
+      - IQR_THRESHOLD=${IQR_THRESHOLD}
+      - LOG_TRANSFORM_TARGET=${LOG_TRANSFORM_TARGET}
+      - PYTHONPATH=/app:/ml_pipeline
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - tfm_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  scraper:
+    build:
+      context: .
+      dockerfile: scraper/Dockerfile
+    container_name: tfm_scraper
+    volumes:
+      - ./scraper:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SCRAPER_INTERVAL_HOURS=${SCRAPER_INTERVAL_HOURS}
+      - MAX_PAGES=${MAX_PAGES}
+      - FUNDA_BASE_URL=${FUNDA_BASE_URL}
+      - FUNDA_SEARCH_URL=${FUNDA_SEARCH_URL}
+      - BACKEND_API_URL=${BACKEND_API_URL}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - tfm_network
+    restart: "no" # Desactivado para no reinicios automáticos
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: tfm_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=/api
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - tfm_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  postgres_data:
+
+networks:
+  tfm_network:
+    driver: bridge
