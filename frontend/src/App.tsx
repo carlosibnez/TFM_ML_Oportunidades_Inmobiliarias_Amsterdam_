@@ -107,7 +107,7 @@ function Dashboard() {
             Oportunidades Inmobiliarias en Ámsterdam
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Trabajo Fin de Máster - Máster Universitario en Ciencia de Datos
+            Trabajo Fin de Máster - Máster Universitario en Data Science
           </p>
         </div>
       </div>

@@ -5,14 +5,17 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.utils import timezone
-from properties.models import Property
+from properties.models import Property, PropertyImage
 
 
 class Command(BaseCommand):
-    help = 'Carga propiedades de Amsterdam desde CSV (para reproducibilidad del proyecto)'
+    help = 'Carga propiedades de Amsterdam y sus imágenes desde CSV (para reproducibilidad del proyecto)'
 
     def handle(self, *args, **options):
+        # 1. CARGAR PROPIEDADES
         csv_path = Path(settings.BASE_DIR).parent / 'data' / 'properties.csv'
+        if not csv_path.exists():
+            csv_path = Path(settings.BASE_DIR) / 'properties.csv'
         
         if not csv_path.exists():
             self.stdout.write(self.style.ERROR(f'Archivo no encontrado: {csv_path}'))
@@ -95,3 +98,48 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'Total en base de datos: {Property.objects.count()} propiedades'
         ))
+        
+        # 2. CARGAR IMÁGENES
+        images_csv = Path(settings.BASE_DIR).parent / 'data' / 'property_images.csv'
+        
+        if images_csv.exists():
+            loaded_imgs = 0
+            skipped_imgs = 0
+            
+            self.stdout.write(f'\nCargando imágenes desde {images_csv}')
+            
+            with open(images_csv, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                
+                for row in reader:
+                    try:
+                        property_url = row['property_url']
+                        image_url = row['image_url']
+                        image_order = int(row.get('image_order', 0))
+                        
+                        prop = Property.objects.filter(url=property_url).first()
+                        if prop:
+                            PropertyImage.objects.get_or_create(
+                                property=prop,
+                                image_url=image_url,
+                                defaults={'order': image_order}
+                            )
+                            loaded_imgs += 1
+                            
+                            if loaded_imgs % 1000 == 0:
+                                self.stdout.write(f'- {loaded_imgs} imágenes cargadas')
+                        else:
+                            skipped_imgs += 1
+                    
+                    except Exception as e:
+                        skipped_imgs += 1
+                        self.stdout.write(
+                            self.style.WARNING(f'Error en {loaded_imgs + skipped_imgs}: {str(e)}')
+                        )
+            
+            self.stdout.write(self.style.SUCCESS(
+                f'\nCarga completada: {loaded_imgs} imágenes cargadas, {skipped_imgs} omitidas'
+            ))
+            self.stdout.write(self.style.SUCCESS(
+                f'Total en base de datos: {PropertyImage.objects.count()} imágenes'
+            ))

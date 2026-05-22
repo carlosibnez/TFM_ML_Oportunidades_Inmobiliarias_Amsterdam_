@@ -8,7 +8,7 @@ Este repositorio contiene la implementación completa de un sistema que detecta 
 
 **Carlos Ibáñez Sánchez**
 
-Máster Universitario en Ciencia de Datos, Universitat Oberta de Catalunya (UOC)
+Máster Universitario en Data Science, Universitat Oberta de Catalunya (UOC)
 
 Email: carlosibasam@uoc.edu
 
@@ -85,6 +85,7 @@ TFM Repo/
 │
 ├── data/                             # Datasets y resultados
 │   ├── properties.csv                # CSV de propiedades
+│   ├── property_images.csv           # CSV de las imágenes de las propiedades
 │   ├── amsterdam_neighborhood_stats.csv  # Stats WOZ por barrio
 │   └── ml_results/                   # Resultados del pipeline (CSVs, .pkl, JSON)
 │
@@ -168,7 +169,7 @@ docker exec -it tfm_backend python manage.py createsuperuser
 
 Pedirá nombre de usuario, email y contraseña.
 
-### 2. Cargar las estadísticas de barrios (WOZ)
+### 3. Cargar las estadísticas de barrios (WOZ)
 
 Estas estadísticas oficiales del Ayuntamiento de Ámsterdam (2025) alimentan tres *features* del modelo (`neighborhood_avg_price`, `neighborhood_avg_area`, `neighborhood_property_count`). Solo se cargan una vez:
 
@@ -178,7 +179,7 @@ docker exec -it tfm_backend python manage.py load_neighborhood_stats
 
 Lee `data/amsterdam_neighborhood_stats.csv` y lo persiste en la tabla `NeighborhoodStats`.
 
-### 3. (Opcional) Cargar propiedades desde el CSV
+### 4. (Opcional) Cargar propiedades e imágenes desde CSV
 
 Si se quiere empezar con el *dataset* existente (sin tener que esperar al *scraper*) y reproducir los resultados del proyecto:
 
@@ -186,7 +187,9 @@ Si se quiere empezar con el *dataset* existente (sin tener que esperar al *scrap
 docker exec -it tfm_backend python manage.py load_properties
 ```
 
-Lee `data/properties.csv` y lo persiste en la tabla `Property` usando *upsert* por URL.
+Este comando:
+- Lee `data/properties.csv` y lo persiste en la tabla `Property` usando *upsert* por URL.
+- Lee `data/property_images.csv` y carga las imágenes asociadas a cada propiedad en la tabla `PropertyImage`.
 
 ## Flujo de uso
 
