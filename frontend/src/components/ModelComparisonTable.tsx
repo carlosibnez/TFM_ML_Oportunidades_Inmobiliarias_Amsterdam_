@@ -51,15 +51,15 @@ export const ModelComparisonTable: React.FC = () => {
     return `${seconds.toFixed(2)}s`;
   };
 
-  // Ordenar por R² descendente
-  const sortedModels = [...data.models].sort((a, b) => b.r2_mean - a.r2_mean);
+  // Ordenar por R²_val descendente
+  const sortedModels = [...data.models].sort((a, b) => b.r2_val - a.r2_val);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       <div className="p-4 border-b border-gray-200 bg-gray-50">
         <h2 className="text-lg font-semibold text-gray-900">Comparación de Modelos ML</h2>
         <p className="text-xs text-gray-500 mt-1">
-          Resultados de validación cruzada (CV) - Ordenados por R² Score
+          R² sobre los 3 conjuntos: Train · Val (CV-5) · Test (holdout) — Ordenados por R²<sub>val</sub>
         </p>
       </div>
 
@@ -69,7 +69,9 @@ export const ModelComparisonTable: React.FC = () => {
             <tr>
               <th className="px-4 py-3 text-left font-semibold text-gray-700">Modelo</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700">Categoría</th>
-              <th className="px-4 py-3 text-right font-semibold text-gray-700">R² Score</th>
+              <th className="px-4 py-3 text-right font-semibold text-gray-700">R²<sub>train</sub></th>
+              <th className="px-4 py-3 text-right font-semibold text-gray-700">R²<sub>val</sub> (CV-5)</th>
+              <th className="px-4 py-3 text-right font-semibold text-gray-700">R²<sub>test</sub></th>
               <th className="px-4 py-3 text-right font-semibold text-gray-700">RMSE</th>
               <th className="px-4 py-3 text-right font-semibold text-gray-700">MAE</th>
               <th className="px-4 py-3 text-right font-semibold text-gray-700">MAPE</th>
@@ -79,7 +81,7 @@ export const ModelComparisonTable: React.FC = () => {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {sortedModels.map((model, idx) => (
-              <tr 
+              <tr
                 key={model.model}
                 className={idx === 0 ? 'bg-green-50' : 'hover:bg-gray-50'}
               >
@@ -96,18 +98,24 @@ export const ModelComparisonTable: React.FC = () => {
                     {model.category}
                   </span>
                 </td>
+                <td className="px-4 py-3 text-right font-mono text-gray-700">
+                  {formatNumber(model.r2_train)}
+                </td>
                 <td className="px-4 py-3 text-right font-mono text-gray-900">
-                  {formatNumber(model.r2_mean)}
-                  <span className="text-gray-400 text-xs ml-1">±{formatNumber(model.r2_std)}</span>
+                  {formatNumber(model.r2_val)}
+                  <span className="text-gray-400 text-xs ml-1">±{formatNumber(model.r2_val_std)}</span>
                 </td>
                 <td className="px-4 py-3 text-right font-mono text-gray-700">
-                  {formatPrice(model.rmse_mean)}
+                  {model.r2_test !== null ? formatNumber(model.r2_test) : '—'}
                 </td>
                 <td className="px-4 py-3 text-right font-mono text-gray-700">
-                  {formatPrice(model.mae_mean)}
+                  {formatPrice(model.rmse_val)}
                 </td>
                 <td className="px-4 py-3 text-right font-mono text-gray-700">
-                  {formatPercent(model.mape_mean)}
+                  {formatPrice(model.mae_val)}
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-gray-700">
+                  {formatPercent(model.mape_val)}
                 </td>
                 <td className="px-4 py-3 text-right font-mono">
                   <span className={model.overfitting_gap > 0.15 ? 'text-red-600' : model.overfitting_gap > 0.08 ? 'text-amber-600' : 'text-green-600'}>

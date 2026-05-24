@@ -60,34 +60,40 @@ export interface MLModel {
   version: string;
   trained_at: string;
   is_active: boolean;
-  
-  // Métricas de Test (Cross-Validation)
-  rmse: number | null;
-  mae: number | null;
-  r2_score: number | null;
-  mape: number | null;
-  medae: number | null;
-  me: number | null;
-  mpe: number | null;
-  
-  // Desviaciones estándar
-  r2_std: number | null;
-  rmse_std: number | null;
-  mae_std: number | null;
-  
+
+  // Métricas de Validación (CV-5)
+  r2_val: number | null;
+  rmse_val: number | null;
+  mae_val: number | null;
+  mape_val: number | null;
+  medae_val: number | null;
+  me_val: number | null;
+  mpe_val: number | null;
+
+  // Desviaciones estándar (CV)
+  r2_val_std: number | null;
+  rmse_val_std: number | null;
+  mae_val_std: number | null;
+
   // Métricas de Train
-  train_r2: number | null;
-  train_rmse: number | null;
-  train_mae: number | null;
-  
+  r2_train: number | null;
+  rmse_train: number | null;
+  mae_train: number | null;
+
+  // Métricas de Test (holdout 20%)
+  r2_test: number | null;
+  rmse_test: number | null;
+  mae_test: number | null;
+  mape_test: number | null;
+
   // Overfitting y rendimiento
   overfitting_gap: number | null;
   training_time: number | null;
-  
+
   // Información del dataset
   n_samples: number | null;
   n_features: number | null;
-  
+
   hyperparameters: Record<string, unknown> | null;
 }
 
@@ -137,18 +143,22 @@ export interface FeatureImportanceData {
 export interface ModelComparisonItem {
   model: string;
   category: string;
-  r2_mean: number;
-  r2_std: number;
-  rmse_mean: number;
-  rmse_std: number;
-  mae_mean: number;
-  mae_std: number;
-  mape_mean: number;
-  me_mean: number;
-  mpe_mean: number;
-  train_r2_mean: number;
-  train_rmse_mean: number;
-  train_mae_mean: number;
+  r2_val: number;
+  r2_val_std: number;
+  rmse_val: number;
+  rmse_val_std: number;
+  mae_val: number;
+  mae_val_std: number;
+  mape_val: number;
+  me_val: number;
+  mpe_val: number;
+  r2_train: number;
+  rmse_train: number;
+  mae_train: number;
+  r2_test: number | null;
+  rmse_test: number | null;
+  mae_test: number | null;
+  mape_test: number | null;
   overfitting_gap: number;
   training_time: number;
 }

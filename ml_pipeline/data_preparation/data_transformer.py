@@ -99,7 +99,7 @@ class DataTransformer:
 
         Criterios:
          - numéricos = mediana
-         - booleanos = False
+         - binarios = False
          - categóricos = 'Unknown'
         """
         # Numéricos: Mediana
@@ -108,7 +108,7 @@ class DataTransformer:
         if num_cols:
             self.df[num_cols] = self.df[num_cols].fillna(self.df[num_cols].median())
         
-        # Booleanos: False
+        # Binarios: False
         bool_cols = [c for c in ['has_balcony', 'has_garden', 'is_furnished', 'has_parking'] 
                      if c in self.df.columns]
         if bool_cols:
@@ -290,14 +290,14 @@ class DataTransformer:
             print(f"- Encoding realizado: {', '.join(encoded_cols)}")
     
     def _convert_boolean_columns(self):
-        """Convertir booleanos a 0/1"""
+        """Convertir binarios a 0/1"""
         bool_cols = ['has_balcony', 'has_garden', 'is_furnished', 'has_parking']
         
         for col in bool_cols:
             if col in self.df.columns:
                 self.df[col] = self.df[col].astype(int)
         
-        print(f"- Booleanos convertidos a 0/1")
+        print(f"- Binarios convertidos a 0/1")
     
     # MÉTODO PRINCIPAL
     
@@ -316,7 +316,7 @@ class DataTransformer:
         8. Crear ratios
         9. Crear estadísticas de barrio
         10. Encoding de categóricas
-        11. Convertir booleanos
+        11. Convertir binarios
         
         Returns:
             pd.DataFrame: Dataset transformado

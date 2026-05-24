@@ -72,4 +72,5 @@ class TestIntegration:
         # Verificar resultados
         assert isinstance(results_df, pd.DataFrame)
         assert len(results_df) > 5  # Varios modelos comparados
-        assert 'r2_mean' in results_df.columns
+        assert 'r2_val' in results_df.columns
+        assert 'r2_train' in results_df.columns

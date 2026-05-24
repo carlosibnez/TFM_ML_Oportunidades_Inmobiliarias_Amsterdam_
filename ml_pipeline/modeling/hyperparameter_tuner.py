@@ -10,7 +10,7 @@ from sklearn.ensemble import (
     ExtraTreesRegressor,
 )
 from sklearn.linear_model import Ridge, Lasso, ElasticNet
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
 from sklearn.preprocessing import RobustScaler
 from sklearn.tree import DecisionTreeRegressor
@@ -271,6 +271,7 @@ class HyperparameterTuner:
                 'test_r2_eur': r2_score(y_test_eur, y_pred_eur),
                 'test_rmse_eur': np.sqrt(mean_squared_error(y_test_eur, y_pred_eur)),
                 'test_mae_eur': mean_absolute_error(y_test_eur, y_pred_eur),
+                'test_mape_eur': mean_absolute_percentage_error(y_test_eur, y_pred_eur) * 100,
             })
             
             # Métricas en €

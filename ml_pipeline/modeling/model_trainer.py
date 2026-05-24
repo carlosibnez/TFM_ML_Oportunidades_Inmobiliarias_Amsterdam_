@@ -8,6 +8,8 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
+from sklearn.dummy import DummyRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import (
     r2_score, 
     mean_squared_error, 
@@ -157,56 +159,56 @@ class ModelTrainer:
                 train_metrics = self.calculate_metrics(y_train_for_metrics, y_pred_train_for_metrics)
                 fold_train_metrics.append(train_metrics)
             
-            # Promediar métricas de test y train
-            test_metrics_avg = {k: np.mean([m[k] for m in fold_test_metrics])
-                                for k in fold_test_metrics[0].keys()}
-            test_metrics_std = {k: np.std([m[k] for m in fold_test_metrics])
-                                for k in fold_test_metrics[0].keys()}
+            # Promediar métricas de val (folds de CV) y train (folds de CV)
+            val_metrics_avg = {k: np.mean([m[k] for m in fold_test_metrics])
+                               for k in fold_test_metrics[0].keys()}
+            val_metrics_std = {k: np.std([m[k] for m in fold_test_metrics])
+                               for k in fold_test_metrics[0].keys()}
             train_metrics_avg = {k: np.mean([m[k] for m in fold_train_metrics])
                                  for k in fold_train_metrics[0].keys()}
-            overfitting_gap = train_metrics_avg['r2'] - test_metrics_avg['r2']
+            overfitting_gap = train_metrics_avg['r2'] - val_metrics_avg['r2']
 
             elapsed_time = time.time() - start_time
-            
+
             result = {
                 'model': model_name,
                 'category': config['category'],
-                'r2_mean': test_metrics_avg['r2'],
-                'r2_std': test_metrics_std['r2'],
-                'rmse_mean': test_metrics_avg['rmse'],
-                'rmse_std': test_metrics_std['rmse'],
-                'mae_mean': test_metrics_avg['mae'],
-                'mae_std': test_metrics_std['mae'],
-                'mape_mean': test_metrics_avg['mape'],
-                'me_mean': test_metrics_avg['me'],
-                'mpe_mean': test_metrics_avg['mpe'],
-                'train_r2_mean': train_metrics_avg['r2'],
-                'train_rmse_mean': train_metrics_avg['rmse'],
-                'train_mae_mean': train_metrics_avg['mae'],
+                'r2_val': val_metrics_avg['r2'],
+                'r2_val_std': val_metrics_std['r2'],
+                'rmse_val': val_metrics_avg['rmse'],
+                'rmse_val_std': val_metrics_std['rmse'],
+                'mae_val': val_metrics_avg['mae'],
+                'mae_val_std': val_metrics_std['mae'],
+                'mape_val': val_metrics_avg['mape'],
+                'me_val': val_metrics_avg['me'],
+                'mpe_val': val_metrics_avg['mpe'],
+                'r2_train': train_metrics_avg['r2'],
+                'rmse_train': train_metrics_avg['rmse'],
+                'mae_train': train_metrics_avg['mae'],
                 'overfitting_gap': overfitting_gap,
                 'training_time': elapsed_time
             }
 
             self.results.append(result)
 
-            print(f"- Test R2: {test_metrics_avg['r2']:.4f} | Train R2: {train_metrics_avg['r2']:.4f} | "
-                  f"Gap: {overfitting_gap:+.4f} | RMSE: €{test_metrics_avg['rmse']:,.0f} | {elapsed_time:.1f}s")
-        
+            print(f"- Val R2: {val_metrics_avg['r2']:.4f} | Train R2: {train_metrics_avg['r2']:.4f} | "
+                  f"Gap tr-val: {overfitting_gap:+.4f} | RMSE Val: €{val_metrics_avg['rmse']:,.0f} | {elapsed_time:.1f}s")
+
         df_results = pd.DataFrame(self.results)
-        
-        # Ordenar por R² test (Métrica principal)
-        df_results = df_results.sort_values('r2_mean', ascending=False).reset_index(drop=True)
-        
+
+        # Ordenar por R²_val (Métrica principal pre-tuning)
+        df_results = df_results.sort_values('r2_val', ascending=False).reset_index(drop=True)
+
         # Seleccionar mejor modelo
         self.best_model_name = df_results.iloc[0]['model']
-        self.best_r2 = df_results.iloc[0]['r2_mean']
+        self.best_r2 = df_results.iloc[0]['r2_val']
         self.best_model = self.models[self.best_model_name]['model']
-        
+
         best = df_results.iloc[0]
         print(f"\nMejor modelo: {self.best_model_name}")
-        print(f"- R²: {best['r2_mean']:.4f} | Gap: {best['overfitting_gap']:+.4f} | "
-              f"RMSE: €{best['rmse_mean']:,.0f} | Tiempo: {best['training_time']:.1f}s")
-        
+        print(f"- R²_val: {best['r2_val']:.4f} | Gap tr-val: {best['overfitting_gap']:+.4f} | "
+              f"RMSE: €{best['rmse_val']:,.0f} | Tiempo: {best['training_time']:.1f}s")
+
         return df_results
     
     def evaluate_tuned(self, tuned_results: dict, X, y, inverse_transform=None,
@@ -279,34 +281,34 @@ class ModelTrainer:
                     'mae': mean_absolute_error(y_tr_eur, y_pred_tr_eur)
                 })
 
-            # Promediar métricas de todos los folds
-            test_metrics_avg = {k: np.mean([m[k] for m in fold_test_metrics])
-                                for k in fold_test_metrics[0].keys()}
-            test_metrics_std = {k: np.std([m[k] for m in fold_test_metrics])
-                                for k in fold_test_metrics[0].keys()}
+            # Promediar métricas de todos los folds (val = fold de validación, train = fold de entrenamiento)
+            val_metrics_avg = {k: np.mean([m[k] for m in fold_test_metrics])
+                               for k in fold_test_metrics[0].keys()}
+            val_metrics_std = {k: np.std([m[k] for m in fold_test_metrics])
+                               for k in fold_test_metrics[0].keys()}
             train_metrics_avg = {k: np.mean([m[k] for m in fold_train_metrics])
                                  for k in fold_train_metrics[0].keys()}
-            
+
             info.update({
-                'cv_test_r2_eur': float(test_metrics_avg['r2']),
-                'cv_test_r2_std': float(test_metrics_std['r2']),
-                'cv_test_rmse_eur': float(test_metrics_avg['rmse']),
-                'cv_test_rmse_std': float(test_metrics_std['rmse']),
-                'cv_test_mae_eur': float(test_metrics_avg['mae']),
-                'cv_test_mae_std': float(test_metrics_std['mae']),
-                'cv_test_mape': float(test_metrics_avg['mape']),
-                'cv_test_medae': float(test_metrics_avg['medae']),
-                'cv_test_me': float(test_metrics_avg['me']),
-                'cv_test_mpe': float(test_metrics_avg['mpe']),
+                'cv_val_r2_eur': float(val_metrics_avg['r2']),
+                'cv_val_r2_std': float(val_metrics_std['r2']),
+                'cv_val_rmse_eur': float(val_metrics_avg['rmse']),
+                'cv_val_rmse_std': float(val_metrics_std['rmse']),
+                'cv_val_mae_eur': float(val_metrics_avg['mae']),
+                'cv_val_mae_std': float(val_metrics_std['mae']),
+                'cv_val_mape': float(val_metrics_avg['mape']),
+                'cv_val_medae': float(val_metrics_avg['medae']),
+                'cv_val_me': float(val_metrics_avg['me']),
+                'cv_val_mpe': float(val_metrics_avg['mpe']),
                 'cv_train_r2_eur': float(train_metrics_avg['r2']),
                 'cv_train_rmse_eur': float(train_metrics_avg['rmse']),
                 'cv_train_mae_eur': float(train_metrics_avg['mae']),
-                'cv_overfitting_gap': float(train_metrics_avg['r2'] - test_metrics_avg['r2'])
+                'cv_overfitting_gap': float(train_metrics_avg['r2'] - val_metrics_avg['r2'])
             })
 
-            print(f"- {model_name:20s}: Test R² = {info['cv_test_r2_eur']:.4f} (±{info['cv_test_r2_std']:.4f}) | "
-                  f"RMSE = €{info['cv_test_rmse_eur']:,.0f} | MAE = €{info['cv_test_mae_eur']:,.0f} | "
-                  f"MAPE = {info['cv_test_mape']:.2f}% | Gap = {info['cv_overfitting_gap']:+.4f}")
+            print(f"- {model_name}: Val R² = {info['cv_val_r2_eur']:.4f} (±{info['cv_val_r2_std']:.4f}) | "
+                  f"RMSE = €{info['cv_val_rmse_eur']:,.0f} | MAE = €{info['cv_val_mae_eur']:,.0f} | "
+                  f"MAPE = {info['cv_val_mape']:.2f}% | Gap tr-val = {info['cv_overfitting_gap']:+.4f}")
 
         return tuned_results
 
@@ -357,10 +359,45 @@ class ModelTrainer:
                 'test_r2_eur': tuning_results.get('test_r2_eur'),
                 'test_rmse_eur': tuning_results.get('test_rmse_eur'),
                 'test_mae_eur': tuning_results.get('test_mae_eur'),
+                'test_mape_eur': tuning_results.get('test_mape_eur'),
             }
-        
+
+        # Evaluar los modelos lineales (no optimizables) sobre el holdout para obtener R²_test
+        # Se entrenan con el 80% y se evalúan sobre el 20% de holdout
+        non_tunable_models = {
+            'Linear_Regression': LinearRegression(),
+            'Baseline_Mean':     DummyRegressor(strategy='mean'),
+            'Baseline_Median':   DummyRegressor(strategy='median'),
+        }
+        # Reconstrucción de Stacking mediante MLConfig (RF+XGB+LightGBM base)
+        stacking_cfg = self.models.get('Stacking') if self.models else MLConfig.get_model_configs().get('Stacking')
+        if stacking_cfg is not None:
+            non_tunable_models['Stacking'] = clone(stacking_cfg['model'])
+
+        y_test_eur_holdout = inverse_fn(y_test)
+        for nt_name, nt_model in non_tunable_models.items():
+            needs_scaling = nt_name in LINEAR_MODELS
+            if needs_scaling and linear_scaler is not None:
+                X_tr_s = linear_scaler.transform(X_train)
+                X_te_s = linear_scaler.transform(X_test)
+            else:
+                X_tr_s, X_te_s = X_train, X_test
+
+            nt_model.fit(X_tr_s, y_train)
+            y_pred_eur = inverse_fn(nt_model.predict(X_te_s))
+
+            tuned_results[nt_name] = {
+                'model': nt_model,
+                'params': None,
+                'test_r2_eur':   float(r2_score(y_test_eur_holdout, y_pred_eur)),
+                'test_rmse_eur': float(np.sqrt(mean_squared_error(y_test_eur_holdout, y_pred_eur))),
+                'test_mae_eur':  float(mean_absolute_error(y_test_eur_holdout, y_pred_eur)),
+                'test_mape_eur': float(mean_absolute_percentage_error(y_test_eur_holdout, y_pred_eur)) * 100,
+            }
+            print(f"- {nt_name}: R2 Test (holdout) = {tuned_results[nt_name]['test_r2_eur']:.4f}")
+
         # Evaluación final CV en €
-        print(f"- Evaluación final CV sobre los modelos")
+        print(f"\nEvaluación final CV sobre los modelos:")
         tuned_results = self.evaluate_tuned(
             tuned_results, X, y_transformed,
             inverse_transform=inverse_fn,
@@ -368,17 +405,20 @@ class ModelTrainer:
             n_splits=5
         )
         
-        # Seleccionar mejor modelo
+        # Seleccionar mejor modelo por R²_val (CV-5)
+        tunable_results = {k: v for k, v in tuned_results.items() if 'cv_val_r2_eur' in v}
         final_model_name, best_metrics = max(
-            tuned_results.items(),
-            key=lambda x: x[1]['cv_test_r2_eur']
+            tunable_results.items(),
+            key=lambda x: x[1]['cv_val_r2_eur']
         )
-        
+
         print(f"\nMejor modelo post-tuning: {final_model_name}")
-        print(f"- R² CV Test: {best_metrics['cv_test_r2_eur']:.4f} (±{best_metrics['cv_test_r2_std']:.4f})")
-        print(f"- RMSE CV: €{best_metrics['cv_test_rmse_eur']:,.0f}")
+        print(f"- R² Val (CV-5): {best_metrics['cv_val_r2_eur']:.4f} (±{best_metrics['cv_val_r2_std']:.4f})")
+        print(f"- RMSE Val: €{best_metrics['cv_val_rmse_eur']:,.0f}")
+        if 'test_r2_eur' in best_metrics and best_metrics['test_r2_eur'] is not None:
+            print(f"- R² Test (holdout): {best_metrics['test_r2_eur']:.4f}")
         print(f"- Overfitting Gap: {best_metrics['cv_overfitting_gap']:+.4f}")
-        
+
         return final_model_name, best_metrics, tuned_results, linear_scaler, LINEAR_MODELS
 
     def train_final_model(self, model, X, y, scaler=None):

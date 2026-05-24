@@ -21,7 +21,9 @@ class TestModelTrainer:
         assert isinstance(results_df, pd.DataFrame)
         assert len(results_df) > 5  # Varios modelos comparados
         assert 'model' in results_df.columns
-        assert 'r2_mean' in results_df.columns
+        assert 'r2_val' in results_df.columns
+        assert 'r2_train' in results_df.columns
+        assert 'overfitting_gap' in results_df.columns
     
     def test_train_final_model(self, sample_features_target, temp_output_dir):
         """Test que train_final_model entrena y puede predecir."""

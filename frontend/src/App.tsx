@@ -154,26 +154,6 @@ function Dashboard() {
                         minute: '2-digit'
                       })}
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-sm">
-                      {activeModel.train_r2 !== null && (
-                        <div>
-                          <span className="text-blue-600">R² Train:</span>
-                          <span className="font-mono ml-1 text-blue-900">{activeModel.train_r2.toFixed(4)}</span>
-                        </div>
-                      )}
-                      {activeModel.train_rmse !== null && (
-                        <div>
-                          <span className="text-blue-600">RMSE Train:</span>
-                          <span className="font-mono ml-1 text-blue-900">{formatPrice(activeModel.train_rmse)}</span>
-                        </div>
-                      )}
-                      {activeModel.train_mae !== null && (
-                        <div>
-                          <span className="text-blue-600">MAE Train:</span>
-                          <span className="font-mono ml-1 text-blue-900">{formatPrice(activeModel.train_mae)}</span>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </div>
               </div>
@@ -192,50 +172,57 @@ function Dashboard() {
                     <div className="text-xs text-gray-500 mt-1">v{activeModel.version}</div>
                   </div>
                   <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                    <div className="text-xs text-gray-600 mb-1">R² Score</div>
+                    <div className="text-xs text-gray-600 mb-1">R² Val (CV-5)</div>
                     <div className="text-2xl font-bold text-blue-600">
-                      {activeModel.r2_score ? activeModel.r2_score.toFixed(4) : 'N/A'}
+                      {activeModel.r2_val !== null ? activeModel.r2_val.toFixed(4) : 'N/A'}
                     </div>
-                    {activeModel.r2_std && (
-                      <div className="text-xs text-gray-500 mt-1">±{activeModel.r2_std.toFixed(4)}</div>
+                    {activeModel.r2_val_std !== null && (
+                      <div className="text-xs text-gray-500 mt-1">±{activeModel.r2_val_std.toFixed(4)}</div>
                     )}
                   </div>
                   <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                    <div className="text-xs text-gray-600 mb-1">RMSE</div>
+                    <div className="text-xs text-gray-600 mb-1">R² Test (holdout)</div>
+                    <div className="text-2xl font-bold text-emerald-600">
+                      {activeModel.r2_test !== null ? activeModel.r2_test.toFixed(4) : 'N/A'}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">20% reservado</div>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <div className="text-xs text-gray-600 mb-1">RMSE Val</div>
                     <div className="text-2xl font-bold text-orange-600">
-                      {activeModel.rmse ? formatPrice(activeModel.rmse) : 'N/A'}
+                      {activeModel.rmse_val !== null ? formatPrice(activeModel.rmse_val) : 'N/A'}
                     </div>
-                    {activeModel.rmse_std && (
-                      <div className="text-xs text-gray-500 mt-1">±{formatPrice(activeModel.rmse_std)}</div>
-                    )}
-                  </div>
-                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                    <div className="text-xs text-gray-600 mb-1">MAE</div>
-                    <div className="text-2xl font-bold text-purple-600">
-                      {activeModel.mae ? formatPrice(activeModel.mae) : 'N/A'}
-                    </div>
-                    {activeModel.mae_std && (
-                      <div className="text-xs text-gray-500 mt-1">±{formatPrice(activeModel.mae_std)}</div>
+                    {activeModel.rmse_val_std !== null && (
+                      <div className="text-xs text-gray-500 mt-1">±{formatPrice(activeModel.rmse_val_std)}</div>
                     )}
                   </div>
                 </div>
 
                 {/* Métricas adicionales */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  {activeModel.mape !== null && (
+                  {activeModel.mae_val !== null && (
                     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                      <div className="text-xs text-gray-600 mb-1">MAPE</div>
+                      <div className="text-xs text-gray-600 mb-1">MAE Val</div>
+                      <div className="text-xl font-bold text-purple-600">
+                        {formatPrice(activeModel.mae_val)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">Error absoluto medio</div>
+                    </div>
+                  )}
+                  {activeModel.mape_val !== null && (
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                      <div className="text-xs text-gray-600 mb-1">MAPE Val</div>
                       <div className="text-xl font-bold text-pink-600">
-                        {activeModel.mape.toFixed(2)}%
+                        {activeModel.mape_val.toFixed(2)}%
                       </div>
                       <div className="text-xs text-gray-500 mt-1">Error % medio</div>
                     </div>
                   )}
-                  {activeModel.medae !== null && (
+                  {activeModel.medae_val !== null && (
                     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                      <div className="text-xs text-gray-600 mb-1">MedAE</div>
+                      <div className="text-xs text-gray-600 mb-1">MedAE Val</div>
                       <div className="text-xl font-bold text-indigo-600">
-                        {formatPrice(activeModel.medae)}
+                        {formatPrice(activeModel.medae_val)}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">Error absoluto mediano</div>
                     </div>
@@ -244,25 +231,13 @@ function Dashboard() {
                     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                       <div className="text-xs text-gray-600 mb-1">Overfitting</div>
                       <div className={`text-xl font-bold ${
-                        activeModel.overfitting_gap > 0.15 ? 'text-red-600' : 
-                        activeModel.overfitting_gap > 0.08 ? 'text-amber-600' : 
+                        activeModel.overfitting_gap > 0.15 ? 'text-red-600' :
+                        activeModel.overfitting_gap > 0.08 ? 'text-amber-600' :
                         'text-green-600'
                       }`}>
                         {activeModel.overfitting_gap.toFixed(4)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">Train-Test gap</div>
-                    </div>
-                  )}
-                  {activeModel.training_time !== null && (
-                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                      <div className="text-xs text-gray-600 mb-1">Tiempo</div>
-                      <div className="text-xl font-bold text-teal-600">
-                        {activeModel.training_time < 1 
-                          ? `${(activeModel.training_time * 1000).toFixed(0)}ms`
-                          : `${activeModel.training_time.toFixed(2)}s`
-                        }
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">Entrenamiento</div>
+                      <div className="text-xs text-gray-500 mt-1">Train − Val gap</div>
                     </div>
                   )}
                   {activeModel.n_samples !== null && (

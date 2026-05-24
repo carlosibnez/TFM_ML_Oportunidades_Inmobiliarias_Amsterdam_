@@ -133,17 +133,29 @@ def run_pipeline(source='postgresql', save_results=False):
         X, y_train_target, y, inverse_transform, comparison_df
     )
     
+    for col in ['r2_test', 'rmse_test', 'mae_test', 'mape_test']:
+        if col not in comparison_df.columns:
+            comparison_df[col] = np.nan
+
     # Actualizar comparison_df con resultados post-tuning
     for model_name, metrics in tuned_results.items():
         mask = comparison_df['model'] == model_name
-        comparison_df.loc[mask, 'r2_mean'] = metrics['cv_test_r2_eur']
-        comparison_df.loc[mask, 'r2_std'] = metrics['cv_test_r2_std']
-        comparison_df.loc[mask, 'rmse_mean'] = metrics['cv_test_rmse_eur']
-        comparison_df.loc[mask, 'mae_mean'] = metrics['cv_test_mae_eur']
-        comparison_df.loc[mask, 'train_r2_mean'] = metrics['cv_train_r2_eur']
-        comparison_df.loc[mask, 'overfitting_gap'] = metrics['cv_overfitting_gap']
-    
-    final_comparison_df = comparison_df.sort_values('r2_mean', ascending=False).reset_index(drop=True)
+        # Para los modelos con optimización: Sobrescribir CV con los resultados post-tuning
+        if 'cv_val_r2_eur' in metrics:
+            comparison_df.loc[mask, 'r2_val'] = metrics['cv_val_r2_eur']
+            comparison_df.loc[mask, 'r2_val_std'] = metrics['cv_val_r2_std']
+            comparison_df.loc[mask, 'rmse_val'] = metrics['cv_val_rmse_eur']
+            comparison_df.loc[mask, 'mae_val'] = metrics['cv_val_mae_eur']
+            comparison_df.loc[mask, 'r2_train'] = metrics['cv_train_r2_eur']
+            comparison_df.loc[mask, 'overfitting_gap'] = metrics['cv_overfitting_gap']
+        # Para todos los modelos: Escribir R²_test (holdout, 20%)
+        if 'test_r2_eur' in metrics and metrics['test_r2_eur'] is not None:
+            comparison_df.loc[mask, 'r2_test'] = metrics['test_r2_eur']
+            comparison_df.loc[mask, 'rmse_test'] = metrics.get('test_rmse_eur')
+            comparison_df.loc[mask, 'mae_test'] = metrics.get('test_mae_eur')
+            comparison_df.loc[mask, 'mape_test'] = metrics.get('test_mape_eur')
+
+    final_comparison_df = comparison_df.sort_values('r2_val', ascending=False).reset_index(drop=True)
 
     # 6: ENTRENAR MODELO FINAL
     print("\n[6/9] Entrenamiento final")
@@ -158,7 +170,7 @@ def run_pipeline(source='postgresql', save_results=False):
     # Actualizar trainer
     trainer.best_model_name = final_model_name
     trainer.best_model = final_model
-    trainer.best_r2 = best_metrics['cv_test_r2_eur']
+    trainer.best_r2 = best_metrics['cv_val_r2_eur']
 
     # 7: DETECTAR OPORTUNIDADES
     # Predicciones sobre propiedades activas
@@ -207,19 +219,23 @@ def run_pipeline(source='postgresql', save_results=False):
             best_row = final_comparison_df[final_comparison_df['model'] == final_model_name].iloc[0]
             
             metrics = {
-                'r2': best_metrics['cv_test_r2_eur'],
-                'rmse': best_metrics['cv_test_rmse_eur'],
-                'mae': best_metrics['cv_test_mae_eur'],
-                'mape': best_metrics.get('cv_test_mape'),
-                'medae': best_metrics.get('cv_test_medae'),
-                'me': best_metrics.get('cv_test_me'),
-                'mpe': best_metrics.get('cv_test_mpe'),
-                'r2_std': best_metrics.get('cv_test_r2_std'),
-                'rmse_std': best_metrics.get('cv_test_rmse_std'),
-                'mae_std': best_metrics.get('cv_test_mae_std'),
-                'train_r2': best_metrics.get('cv_train_r2_eur'),
-                'train_rmse': best_metrics.get('cv_train_rmse_eur'),
-                'train_mae': best_metrics.get('cv_train_mae_eur'),
+                'r2_val': best_metrics['cv_val_r2_eur'],
+                'rmse_val': best_metrics['cv_val_rmse_eur'],
+                'mae_val': best_metrics['cv_val_mae_eur'],
+                'mape_val': best_metrics.get('cv_val_mape'),
+                'medae_val': best_metrics.get('cv_val_medae'),
+                'me_val': best_metrics.get('cv_val_me'),
+                'mpe_val': best_metrics.get('cv_val_mpe'),
+                'r2_val_std': best_metrics.get('cv_val_r2_std'),
+                'rmse_val_std': best_metrics.get('cv_val_rmse_std'),
+                'mae_val_std': best_metrics.get('cv_val_mae_std'),
+                'r2_train': best_metrics.get('cv_train_r2_eur'),
+                'rmse_train': best_metrics.get('cv_train_rmse_eur'),
+                'mae_train': best_metrics.get('cv_train_mae_eur'),
+                'r2_test': best_metrics.get('test_r2_eur'),
+                'rmse_test': best_metrics.get('test_rmse_eur'),
+                'mae_test': best_metrics.get('test_mae_eur'),
+                'mape_test': best_metrics.get('test_mape_eur'),
                 'overfitting_gap': best_metrics.get('cv_overfitting_gap'),
                 'training_time': best_row.get('training_time'),
                 'n_samples': len(X),

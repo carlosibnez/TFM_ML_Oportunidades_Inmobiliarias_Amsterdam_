@@ -50,7 +50,6 @@ class Property(models.Model):
     is_furnished = models.BooleanField(default=False)
     has_parking = models.BooleanField(default=False)
     
-    # Metadata
     scraped_at = models.DateTimeField(auto_now_add=True)
     listed_since = models.CharField(max_length=50, blank=True, help_text="Fecha desde que está en el mercado")
     updated_at = models.DateTimeField(auto_now=True)
@@ -163,27 +162,33 @@ class MLModel(models.Model):
     model_type = models.CharField(max_length=50, choices=MODEL_TYPES_CHOICES)
     version = models.CharField(max_length=50)
     
-    # Métricas de Test (Cross-Validation)
-    rmse = models.FloatField(null=True, blank=True, help_text="Root Mean Squared Error")
-    mae = models.FloatField(null=True, blank=True, help_text="Mean Absolute Error")
-    r2_score = models.FloatField(null=True, blank=True, help_text="R² Score")
-    mape = models.FloatField(null=True, blank=True, help_text="Mean Absolute Percentage Error")
-    medae = models.FloatField(null=True, blank=True, help_text="Median Absolute Error")
-    me = models.FloatField(null=True, blank=True, help_text="Mean Error (Bias)")
-    mpe = models.FloatField(null=True, blank=True, help_text="Mean Percentage Error")
-    
+    # Métricas de Validación (CV-5)
+    r2_val = models.FloatField(null=True, blank=True, help_text="R² Score sobre validación cruzada (CV-5)")
+    rmse_val = models.FloatField(null=True, blank=True, help_text="RMSE sobre validación cruzada (CV-5)")
+    mae_val = models.FloatField(null=True, blank=True, help_text="MAE sobre validación cruzada (CV-5)")
+    mape_val = models.FloatField(null=True, blank=True, help_text="MAPE sobre validación cruzada (CV-5)")
+    medae_val = models.FloatField(null=True, blank=True, help_text="MedAE sobre validación cruzada (CV-5)")
+    me_val = models.FloatField(null=True, blank=True, help_text="ME sobre validación cruzada (CV-5)")
+    mpe_val = models.FloatField(null=True, blank=True, help_text="MPE sobre validación cruzada (CV-5)")
+
     # Desviaciones estándar de métricas (CV)
-    r2_std = models.FloatField(null=True, blank=True)
-    rmse_std = models.FloatField(null=True, blank=True)
-    mae_std = models.FloatField(null=True, blank=True)
-    
+    r2_val_std = models.FloatField(null=True, blank=True, help_text="Desviación estándar de R² entre folds")
+    rmse_val_std = models.FloatField(null=True, blank=True, help_text="Desviación estándar de RMSE entre folds")
+    mae_val_std = models.FloatField(null=True, blank=True, help_text="Desviación estándar de MAE entre folds")
+
     # Métricas de Train
-    train_r2 = models.FloatField(null=True, blank=True)
-    train_rmse = models.FloatField(null=True, blank=True)
-    train_mae = models.FloatField(null=True, blank=True)
-    
+    r2_train = models.FloatField(null=True, blank=True, help_text="R² sobre el conjunto de entrenamiento")
+    rmse_train = models.FloatField(null=True, blank=True, help_text="RMSE sobre el conjunto de entrenamiento")
+    mae_train = models.FloatField(null=True, blank=True, help_text="MAE sobre el conjunto de entrenamiento")
+
+    # Métricas de Test (Holdout 20%)
+    r2_test = models.FloatField(null=True, blank=True, help_text="R² sobre el test (holdout)")
+    rmse_test = models.FloatField(null=True, blank=True, help_text="RMSE sobre el test (holdout)")
+    mae_test = models.FloatField(null=True, blank=True, help_text="MAE sobre el test (holdout)")
+    mape_test = models.FloatField(null=True, blank=True, help_text="MAPE sobre el test (holdout)")
+
     # Overfitting y rendimiento
-    overfitting_gap = models.FloatField(null=True, blank=True, help_text="Diferencia entre R² train y test")
+    overfitting_gap = models.FloatField(null=True, blank=True, help_text="Diferencia entre R² train y R² val")
     training_time = models.FloatField(null=True, blank=True, help_text="Tiempo de entrenamiento en segundos")
     
     # Información del dataset
@@ -193,7 +198,6 @@ class MLModel(models.Model):
     # Configuración
     hyperparameters = models.JSONField(null=True, blank=True)
     
-    # Metadata
     trained_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=False)
     
@@ -219,19 +223,19 @@ class Prediction(models.Model):
 
 
 class NeighborhoodStats(models.Model):
-    """Official neighborhood statistics (WOZ gemeente Amsterdam, 2025)."""
+    """Estadísticas oficiales de neighborhoods (WOZ gemeente Amsterdam, 2025)."""
 
     neighborhood = models.CharField(max_length=100, unique=True)
     area_code = models.CharField(max_length=10, blank=True)
     year = models.IntegerField(default=2025)
 
-    woz_value = models.IntegerField(help_text="Official WOZ assessed value in €")
-    housing_stock = models.IntegerField(help_text="Total number of dwellings")
-    housing_density = models.IntegerField(help_text="Dwellings per km²")
-    population = models.IntegerField(help_text="Total population")
-    avg_area_m2 = models.FloatField(help_text="Average dwelling size in m²")
+    woz_value = models.IntegerField(help_text="Valor WOZ oficial en €")
+    housing_stock = models.IntegerField(help_text="Número total de viviendas")
+    housing_density = models.IntegerField(help_text="Viviendas por km²")
+    population = models.IntegerField(help_text="Población total")
+    avg_area_m2 = models.FloatField(help_text="Tamaño promedio de la vivienda en m²")
 
-    # Size distribution
+    # Distribución por tamaño
     area_0_40 = models.IntegerField(default=0)
     area_40_60 = models.IntegerField(default=0)
     area_60_80 = models.IntegerField(default=0)
